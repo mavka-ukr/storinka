@@ -14,25 +14,39 @@ const elementEventNamesMap = {
   'клік': 'click'
 };
 
+const init$Element = ($el) => {
+  if ($el.__v) {
+    return;
+  }
+
+  $el.__v = {};
+  $el.__v.attrs = new Set();
+  $el.__v.events = new Set();
+};
+
 const render = (vNode) => {
-  if (typeof vNode === 'string') {
-    const $text = document.createTextNode(vNode);
+  if (typeof vNode !== 'object' || !vNode) {
+    const $text = document.createTextNode(String(vNode));
     return $text;
   }
   
-  const name = vNode['назва'];
+  const name = elementNamesMap[vNode['назва']] ?? vNode['назва'];
   const attrs = vNode['атрибути'];
   const children = vNode['діти'];
 
-  const $el = document.createElement(elementNamesMap[name]);
+  const $el = document.createElement(name);
+
+  init$Element($el);
 
   Object.entries(attrs).forEach(([k, v]) => {
     if (k === 'події') {
       Object.entries(v).forEach(([eK, eV]) => {
-        $el.addEventListener(elementEventNamesMap[eK], eV);
+        $el.addEventListener(elementEventNamesMap[eK] ?? eK, eV);
+        $el.__v.events.add(eK);
       });
     } else {
-      $el.setAttribute(elementAttributeNamesMap[k], v);
+      $el.setAttribute(elementAttributeNamesMap[k] ?? k, v);
+      $el.__v.attrs.add(k);
     }
   });
 
@@ -43,18 +57,48 @@ const render = (vNode) => {
   return $el;
 };
 
-const mount = ($node) => {
-  [...document.getElementById('app').children].forEach(($node) => $node.remove());
-  document.getElementById('app').appendChild($node);
+const patch = ($node, newVNode) => {
+  if ($node instanceof Text) {
+    const $newNode = render(newVNode);
+    $node.parentElement.replaceChild($newNode, $node);
+    return $newNode;
+  }
+
+  init$Element($node);
+
+  const newName = elementNamesMap[newVNode['назва']] ?? newVNode['назва'];
+  
+  if ($node.tagName.toLowerCase() !== newName) {
+     const $newNode = render(newVNode);
+     $node.parentElement.replaceChild($newNode, $node);
+     $node = $newNode;
+  }
+
+  newVNode['діти'].forEach((newChildVNode, i) => {
+    let $childNode = $node.childNodes[i];
+
+    if ($childNode) {
+      $childNode = patch($childNode, newChildVNode)
+    } else {
+      $childNode = render(newChildVNode)
+      $node.appendChild($childNode);
+    }
+  });
+
+  return $node;
 };
 
 mavkaContext.set('render', mavka.makePortalFunction(render));
-mavkaContext.set('mount', mavka.makePortalFunction(mount));
+mavkaContext.set('patch', mavka.makePortalFunction(patch));
+mavkaContext.set('patchApp', mavka.makePortalFunction((vNode) => {
+  const $app = document.getElementById('app');
+  patch($app, vNode);
+}));
 "
 
 взяти "хмарний.пак.укр/стан/0.0.3"
 
-стан = Стан((рахунок=1))
+стан = Стан(дані=(рахунок=1))
 
 дія збільшити_рахунок()
   стан["рахунок"] += 1
@@ -79,10 +123,20 @@ mavkaContext.set('mount', mavka.makePortalFunction(mount));
         клік=((): збільшити_рахунок())
       )
     ),
-    "Привіт! %(рахунок)"
+    "+1"
+  )
+
+  текст_рахуноку = створити_елемент(
+    "h1",
+    (),
+    рахунок
   )
   
-  mount(render(кнопка))
+  patchApp(створити_елемент(
+    "div", 
+    (id="app"),
+    [кнопка, текст_рахуноку]
+  ))
 кінець
 
 стан.слухати(оновити)
