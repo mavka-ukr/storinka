@@ -89,62 +89,43 @@ const patch = ($node, newVNode) => {
     }
   });
 
+  if (newVNode['діти'].length < $node.childNodes.length) {
+    [...$node.childNodes].forEach(($childNode, index) => {
+      if ((index + 1) > newVNode['діти'].length) {
+        $childNode.remove();
+      }
+    });
+  }
+
   return $node;
 };
 
-mavkaContext.set('render', mavka.makePortalFunction(render));
-mavkaContext.set('patch', mavka.makePortalFunction(patch));
-mavkaContext.set('patchApp', mavka.makePortalFunction((vNode) => {
+mavkaContext.set('storinka_patchApp', mavka.makePortalFunction((vNode) => {
   const $app = document.getElementById('app');
   patch($app, vNode);
 }));
 "
 
-взяти "хмарний.пак.укр/стан/0.0.3"
-
-стан = Стан(дані=(рахунок=1))
-
-дія збільшити_рахунок()
-  стан["рахунок"] += 1
-кінець
-
-дія створити_елемент(назва текст, атрибути словник, діти список)
-  якщо діти не є список
-    діти = [діти]
+модуль сторінка
+  дія створити_елемент(назва текст, атрибути словник, діти список) словник
+    якщо діти не є список
+      діти = [діти]
+    кінець
+  
+    чисті_діти = діти.фільтрувати((д): д не є пусто)
+    
+    (назва=назва, атрибути=атрибути, діти=чисті_діти)
   кінець
-  
-  вернути (назва=назва, атрибути=атрибути, діти=діти)
+
+  дія показати(дерево список або словник) ніщо
+    storinka_patchApp(створити_елемент(
+      "div", 
+      (id="app"),
+      дерево
+    ))
+  кінець
+
+  дати створити_елемент, показати
 кінець
 
-дія оновити()
-  рахунок = стан["рахунок"]
-  
-  кнопка = створити_елемент(
-    "кнопка", 
-    (
-      клас="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded",
-      події=(
-        клік=збільшити_рахунок
-      )
-    ),
-    "+1"
-  )
-
-  текст_рахуноку = створити_елемент(
-    "h1",
-    (),
-    рахунок
-  )
-  
-  patchApp(створити_елемент(
-    "div", 
-    (id="app"),
-    [кнопка, текст_рахуноку]
-  ))
-кінець
-
-стан.слухати(оновити)
-
-оновити()
-
-показати_вітрину()
+дати сторінка
