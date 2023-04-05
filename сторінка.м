@@ -1,0 +1,92 @@
+js "
+const mavka = getMavka();
+const mavkaContext = getContext();
+
+const elementNamesMap = {
+  'кнопка': 'button'
+};
+
+const elementAttributeNamesMap = {
+  'клас': 'class'
+};
+
+const elementEventNamesMap = {
+  'клік': 'click'
+};
+
+const render = (vNode) => {
+  if (typeof vNode === 'string') {
+    const $text = document.createTextNode(vNode);
+    return $text;
+  }
+  
+  const name = vNode['назва'];
+  const attrs = vNode['атрибути'];
+  const children = vNode['діти'];
+
+  const $el = document.createElement(elementNamesMap[name]);
+
+  Object.entries(attrs).forEach(([k, v]) => {
+    if (k === 'події') {
+      Object.entries(v).forEach(([eK, eV]) => {
+        $el.addEventListener(elementEventNamesMap[eK], eV);
+      });
+    } else {
+      $el.setAttribute(elementAttributeNamesMap[k], v);
+    }
+  });
+
+  children.forEach((childVNode) => {
+    $el.appendChild(render(childVNode));
+  });
+    
+  return $el;
+};
+
+const mount = ($node) => {
+  [...document.getElementById('app').children].forEach(($node) => $node.remove());
+  document.getElementById('app').appendChild($node);
+};
+
+mavkaContext.set('render', mavka.makePortalFunction(render));
+mavkaContext.set('mount', mavka.makePortalFunction(mount));
+"
+
+взяти "хмарний.пак.укр/стан/0.0.3"
+
+стан = Стан((рахунок=1))
+
+дія збільшити_рахунок()
+  стан["рахунок"] += 1
+кінець
+
+дія створити_елемент(назва текст, атрибути словник, діти список)
+  якщо діти не є список
+    діти = [діти]
+  кінець
+  
+  вернути (назва=назва, атрибути=атрибути, діти=діти)
+кінець
+
+дія оновити()
+  рахунок = стан["рахунок"]
+  
+  кнопка = створити_елемент(
+    "кнопка", 
+    (
+      клас="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded",
+      події=(
+        клік=((): збільшити_рахунок())
+      )
+    ),
+    "Привіт! %(рахунок)"
+  )
+  
+  mount(render(кнопка))
+кінець
+
+стан.слухати(оновити)
+
+оновити()
+
+показати_вітрину()
