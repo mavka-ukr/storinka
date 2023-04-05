@@ -59,9 +59,13 @@ const render = (vNode) => {
 
 const patch = ($node, newVNode) => {
   if ($node instanceof Text) {
-    const $newNode = render(newVNode);
-    $node.parentElement.replaceChild($newNode, $node);
-    return $newNode;
+    if ($node.textContent !== newVNode) {
+      const $newNode = render(newVNode);
+      $node.parentElement.replaceChild($newNode, $node);
+      return $newNode;
+    } else {
+      return $node;
+    }
   }
 
   init$Element($node);
@@ -120,7 +124,7 @@ mavkaContext.set('patchApp', mavka.makePortalFunction((vNode) => {
     (
       клас="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded",
       події=(
-        клік=((): збільшити_рахунок())
+        клік=збільшити_рахунок
       )
     ),
     "+1"
